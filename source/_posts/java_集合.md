@@ -1,0 +1,236 @@
+Java-集合之ArrayList
+---
+title: java学习笔记
+date: 2020-05-17 23:03:19
+tags:
+
+---
+
+
+## 1、集合框架的概述
+集合、数组都是对多个数据进行存储操作的结构，简称**Java容器**。 说明：此时的存储，主要指的是内存层面的存储，不涉及到持久化的存储（.txt .jpg等）。<br>
+以下描述引用于onJava 8：<br>
+集合（Collection） ：一个独立元素的序列，这些元素都服从一条或多条规则。List 必须以插入的顺序保存元素， Set 不能包含重复元素， Queue 按照排队规则来确定对象产生的顺序（通常与它们被插入的顺序相同）
+
+
+## 2、关于数组的概述
+数组在存储多个数据方面的特点：<br>
+>① 一旦初始化以后，其长度就确定了;<br>
+>② 数组一旦定义好，其元素的类型也就确定了。我们也就只能操作指定类型的数据了。比如：```String[] string;int[] int```。<br>
+
+数组在存储多个数据方面的缺点：<br>
+>① 一旦初始化以后，其长度就不可修改。<br>
+>② 数组中提供的方法非常有限，对于添加、删除、插入数据等操作，非常不便，同时效率不高。<br>
+>③ 获取数组中实际元素的个数的需求，数组没有现成的属性或方法可用。<br>
+>④ 数组存储数据的特点：有序、可重复。对于无序、不可重复的需求，不能满足。<br>
+
+## 3、集合涉及的接口、实现类
+
+|----Collection接口：单列集合，用来存储一个一个的对象<br>
+&emsp;|----List接口：存储有序的、可重复的数据。   <br>
+&emsp;&emsp;|----ArrayList、LinkedList、Vector<br>
+&emsp;|----Set接口：存储无序的、不可重复的数据。  <br> 
+&emsp;&emsp;|----HashSet、LinkedHashSet、TreeSet<br>
+
+List是Collection的子接口，ArrayList、LinkedList、Vector是List接口的实现类。
+
+|----Map接口：双列集合，用来存储一对（key - value）一对的数据。  <br>
+&emsp;|----HashMap、LinkedHashMap、TreeMap、Hashtable、Properties
+
+HashMap、LinkedHashMap、TreeMap、Hashtable、Properties是Map接口的实现类。
+
+## 4、Collection接口中常用方法
+<pre><code>
+增：add(Object obj)
+删：remove(int index) / remove(Object obj)
+改：set(int index, Object ele)
+查：get(int index)
+插：add(int index, Object obj)
+长度：size()	//默认情况下返回的是元素的个数，而不是数组本身的长度
+遍历：
+①Iterator迭代器方式
+②增强for循环
+③普通的循环
+</code></pre>
+
+## 5、ArrayList、LinkedList、Vector三者的异同
+相同点：三者都实现了List接口，存储的数据都是有序的、可重复的；
+
+不同点：
+ArrayList：作为List接口的主要实现类，线程不安全的，效率高；底层使用Object[] elementData存储（其实是对数组的封装）；<br>
+LinkedList：对于频繁的插入、删除操作，使用此类效率比ArrayList高，底层使用双向链表存储；<br>
+Vector：作为List接口的古老实现类，线程安全的，效率低；底层使用Object[] elementData存储。
+
+
+## 6、ArrayList初始化解析
+<b>ArrayList源码分析之jdk 7：</b><br>
+
+```ArrayList list = new ArrayList();```
+执行该语句时，底层创建了长度是10的Object[]数组elementData;
+
+```list.add(123);```相当于```elementData[0] = new Integer(123);```
+
+
+
+
+<b>ArrayList源码分析之jdk 8：</b>
+
+<pre><code>
+private static final int DEFAULT_CAPACITY = 10;
+
+private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
+
+public ArrayList() {
+    this.elementData = DEFAULTCAPACITY_EMPTY_ELEMENTDATA;
+}
+
+public boolean add(E e) {
+    ensureCapacityInternal(size + 1);  // Increments modCount!!
+    elementData[size++] = e;
+    return true;
+}
+
+private static int calculateCapacity(Object[] elementData, int minCapacity) {
+    if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
+        return Math.max(DEFAULT_CAPACITY, minCapacity);
+    }
+    return minCapacity;
+}
+
+private void ensureCapacityInternal(int minCapacity) {
+    ensureExplicitCapacity(calculateCapacity(elementData, minCapacity));
+}
+</code></pre>
+
+上图为jdk 8中的ArrayList部分源码，在执行语句：```ArrayList list = new ArrayList();```时；底层Object[] elementData数组初始化为{},此时并没有创建长度为10的数组；<br>
+
+在当第一次调用add()时：```list.add(123);```底层才创建了长度为10的数组，并将数据123添加到elementData数组中。<br>
+
+小结：jdk 7 中的ArrayList的对象的数组创建类似于单例的饿汉式（提前造好）；而jdk8中的ArrayList的对象
+的数组创建类似于单例的懒汉式（需要时才初始化），延迟了数组的创建，节省内存。
+
+
+
+## 7、ArrayList扩容解析
+先附上jdk 8中ArrayList的有关扩容部分的源码，主要是grow()方法：
+
+<pre><code>
+private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+
+public boolean add(E e) {
+    ensureCapacityInternal(size + 1);  // Increments modCount!!
+    elementData[size++] = e;
+    return true;
+}
+
+private static int calculateCapacity(Object[] elementData, int minCapacity) {
+    if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
+        return Math.max(DEFAULT_CAPACITY, minCapacity);
+    }
+    return minCapacity;
+}
+
+private void ensureCapacityInternal(int minCapacity) {
+    ensureExplicitCapacity(calculateCapacity(elementData, minCapacity));
+}
+
+private void ensureExplicitCapacity(int minCapacity) {
+    modCount++;
+
+    // overflow-conscious code
+    if (minCapacity - elementData.length > 0)
+        grow(minCapacity);
+}
+
+/**
+ * Increases the capacity to ensure that it can hold at least the
+ * number of elements specified by the minimum capacity argument.
+ *
+ * @param minCapacity the desired minimum capacity
+ */
+private void grow(int minCapacity) {
+    // overflow-conscious code
+    int oldCapacity = elementData.length;
+    int newCapacity = oldCapacity + (oldCapacity >> 1);
+    if (newCapacity - minCapacity < 0)
+        newCapacity = minCapacity;
+    if (newCapacity - MAX_ARRAY_SIZE > 0)
+        newCapacity = hugeCapacity(minCapacity);
+    // minCapacity is usually close to size, so this is a win:
+    elementData = Arrays.copyOf(elementData, newCapacity);
+}
+
+private static int hugeCapacity(int minCapacity) {
+    if (minCapacity < 0) // overflow
+        throw new OutOfMemoryError();
+    return (minCapacity > MAX_ARRAY_SIZE) ?
+        Integer.MAX_VALUE :
+        MAX_ARRAY_SIZE;
+}
+
+</code></pre>
+
+根据源码知道，ArrayList扩容最主要的在grow()方法，以下解释下该方法：
+<pre><code>
+private void grow(int minCapacity) {
+    //minCapacity = size + 1；可以理解为需要的数组长度+1
+    // 获取当前数组的长度
+    int oldCapacity = elementData.length;
+    // 通过位移运算（计算机底层中位移运算更快），将新的数组长度定义为原来的1.5倍
+    //为什么扩容的是1.5倍而不是其他倍？后面会解释
+    //此处若溢出，newCapacity将为负值，不影响后续条件的判断
+    int newCapacity = oldCapacity + (oldCapacity >> 1);
+    //比较计算出的新长度与minCapacity
+    if (newCapacity - minCapacity < 0)
+        //如果扩容1.5倍后的长度仍比需要的长度小，则把newCapacity定义为需要的长度+1：minCapacity = size + 1
+        newCapacity = minCapacity;
+
+    //此条件是为了处理溢出的情况
+    //比较计算出的新长度与MAX_ARRAY_SIZE：ArrayList允许的最大长度
+    if (newCapacity - MAX_ARRAY_SIZE > 0)
+        //如果扩容后的长度大于允许的最大长度，调用hugeCapacity方法
+        //根据hugeCapacity方法源码可知，当minCapacity > MAX_ARRAY_SIZE时，将返回Integer.MAX_VALUE
+        newCapacity = hugeCapacity(minCapacity);
+    // minCapacity is usually close to size, so this is a win:
+    //调用Arrays.copyOf方法，传入旧的数组、扩容后的长度；返回一个拥有新的长度的数组（原有值不变）
+    elementData = Arrays.copyOf(elementData, newCapacity);
+}
+</code></pre>
+
+<b>为什么扩容的是1.5倍而不是其他倍？</b><br>
+\>因为一次性扩容太大(例如2.5倍)可能会浪费更多的内存(1.5倍最多浪费33%，而2.5被最多会浪费60%，3.5倍则会浪费71%……)。<br>
+\>但是一次性扩容太小，需要多次对数组重新分配内存，对性能消耗比较严重。<br>
+\>所以1.5倍是个经验值，它既能满足性能需求，也不会造成很大的内存消耗。<br>
+\>所以扩容扩多少，是JDK开发人员在时间、空间上做的一个权衡，提供出来的一个比较合理的数值。
+
+<b>总结</b>：<br>
+创建集合的时候，如果能知道总长度是多少，最好定义集合的长度，避免因扩容带来的资源浪费和内存消耗。
+
+## 7、ArrayList遍历方式解析
+
+ArrayList遍历总的有三种：<br>
+1、通过普通for循环的方式；<br>
+2、foreach的方式；<br>
+3、Iterator迭代器的方式。<br>
+
+这三种方式相信大家都知道，所以就不写相关的代码了，但是对于ArrayList来说哪种方式效率更高，更快呢？<br>
+ArrayList实现了RandomAccess接口，其中RandomAccess接口又这么一段描述：
+<pre><code>
+* for typical instances of the class, this loop:
+* 
+*     for (int i=0, n=list.size(); i &lt; n; i++)
+*         list.get(i);
+* 
+* runs faster than this loop:
+* 
+*     for (Iterator i=list.iterator(); i.hasNext(); )
+*         i.next();
+* 
+</pre></code>
+
+从描述中，可以看出实现RandomAccess接口的集合类，使用for循环的效率会比Iterator高。<br>
+RandomAccess接口为ArrayList带来的好处：<br>
+1、可以快速随机访问集合。<br>
+2、使用快速随机访问（for循环）效率可以高于Iterator。
+
+## 8、未完待续...
