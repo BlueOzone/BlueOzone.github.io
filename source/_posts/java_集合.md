@@ -1,9 +1,7 @@
-Java-集合之ArrayList
 ---
-title: java学习笔记
-date: 2020-05-17 23:03:19
+title: Java-集合之ArrayList
+date: 2019-08-25 17:13:34
 tags:
-
 ---
 
 
@@ -15,14 +13,14 @@ tags:
 
 ## 2、关于数组的概述
 数组在存储多个数据方面的特点：<br>
->① 一旦初始化以后，其长度就确定了;<br>
->② 数组一旦定义好，其元素的类型也就确定了。我们也就只能操作指定类型的数据了。比如：```String[] string;int[] int```。<br>
+① 一旦初始化以后，其长度就确定了;<br>
+② 数组一旦定义好，其元素的类型也就确定了。我们也就只能操作指定类型的数据了。比如：`String[] string;int[] int`。<br>
 
 数组在存储多个数据方面的缺点：<br>
->① 一旦初始化以后，其长度就不可修改。<br>
->② 数组中提供的方法非常有限，对于添加、删除、插入数据等操作，非常不便，同时效率不高。<br>
->③ 获取数组中实际元素的个数的需求，数组没有现成的属性或方法可用。<br>
->④ 数组存储数据的特点：有序、可重复。对于无序、不可重复的需求，不能满足。<br>
+① 一旦初始化以后，其长度就不可修改。<br>
+② 数组中提供的方法非常有限，对于添加、删除、插入数据等操作，非常不便，同时效率不高。<br>
+③ 获取数组中实际元素的个数的需求，数组没有现成的属性或方法可用。<br>
+④ 数组存储数据的特点：有序、可重复。对于无序、不可重复的需求，不能满足。<br>
 
 ## 3、集合涉及的接口、实现类
 
@@ -213,6 +211,7 @@ ArrayList遍历总的有三种：<br>
 2、foreach的方式；<br>
 3、Iterator迭代器的方式。<br>
 
+
 这三种方式相信大家都知道，所以就不写相关的代码了，但是对于ArrayList来说哪种方式效率更高，更快呢？<br>
 ArrayList实现了RandomAccess接口，其中RandomAccess接口又这么一段描述：
 <pre><code>
@@ -233,4 +232,90 @@ RandomAccess接口为ArrayList带来的好处：<br>
 1、可以快速随机访问集合。<br>
 2、使用快速随机访问（for循环）效率可以高于Iterator。
 
-## 8、未完待续...
+**注意**：ArrayList的iterator和listIterator方法返回的迭代器是fail-fast的：在创建迭代器之后，除非通过迭代器自身的remove或add方法从结构上对列表进行修改，否则在任何时间以任何方式对列表进行修改，迭代器都会抛出ConcurrentModificationException。因此，面对并发的修改，迭代器很快就会完全失败，而不是冒着在将来某个不确定时间发生任意不确定行为的风险。
+
+注意，迭代器的快速失败行为无法得到保证，因为一般来说，不可能对是否出现不同步并发修改做出任何硬性保证。快速失败迭代器会尽最大努力抛出ConcurrentModificationException。因此，为提高这类迭代器的正确性而编写一个依赖于此异常的程序是错误的做法：迭代器的快速失败行为应该仅用于检测bug。
+
+## 8、ArrayList之多线程
+
+ArrayList本身是线程不安全的，在多线程操作ArrayList时，需要使用：<br>
+`List list1 = Collections.synchronizedList(list);`<br>
+该方法可使将指定集合包装成线程同步的集合，从而可以解决多线程并发访问集合时的线程安全问题；以下附上synchronizedList()方法的源码，可以看到，返回的list对象里，大部分方法内部都使用了synchronized关键字保证同步，锁mutex是对象本身。<br>
+但是注意，关于迭代器的方法并没有加上synchronized同步锁，所以在多线程的场景下，需要在外部加上synchronized同步锁保证线程安全。
+
+
+<pre><code>
+
+public static <T> List<T> synchronizedList(List<T> list) {
+    return (list instanceof RandomAccess ?
+            new SynchronizedRandomAccessList<>(list) :
+            new SynchronizedList<>(list));
+}
+
+static class SynchronizedList<E>
+    extends SynchronizedCollection<E>
+    implements List<E> {
+    private static final long serialVersionUID = -7754090372962971524L;
+
+    final List<E> list;
+
+    SynchronizedList(List<E> list) {
+        super(list);
+        this.list = list;
+    }
+    SynchronizedList(List<E> list, Object mutex) {
+        super(list, mutex);
+        this.list = list;
+    }
+
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        synchronized (mutex) {return list.equals(o);}
+    }
+    public int hashCode() {
+        synchronized (mutex) {return list.hashCode();}
+    }
+
+    public E get(int index) {
+        synchronized (mutex) {return list.get(index);}
+    }
+    public E set(int index, E element) {
+        synchronized (mutex) {return list.set(index, element);}
+    }
+    public void add(int index, E element) {
+        synchronized (mutex) {list.add(index, element);}
+    }
+    public E remove(int index) {
+        synchronized (mutex) {return list.remove(index);}
+    }
+
+    public int indexOf(Object o) {
+        synchronized (mutex) {return list.indexOf(o);}
+    }
+    public int lastIndexOf(Object o) {
+        synchronized (mutex) {return list.lastIndexOf(o);}
+    }
+
+    public boolean addAll(int index, Collection<? extends E> c) {
+        synchronized (mutex) {return list.addAll(index, c);}
+    }
+
+    public ListIterator<E> listIterator() {
+        return list.listIterator(); // Must be manually synched by user
+    }
+
+    public ListIterator<E> listIterator(int index) {
+        return list.listIterator(index); // Must be manually synched by user
+    }
+
+    public List<E> subList(int fromIndex, int toIndex) {
+        synchronized (mutex) {
+            return new SynchronizedList<>(list.subList(fromIndex, toIndex),
+                                        mutex);
+        }
+    }
+}
+
+</pre></code>
+
