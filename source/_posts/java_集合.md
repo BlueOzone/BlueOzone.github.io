@@ -1,17 +1,16 @@
 ---
 title: Java-集合之ArrayList
-date: 2019-08-25 17:13:34
-tags:
+date: 2020-05-16 21:02:15
 ---
 
 
-## 1、集合框架的概述
+### 1、集合框架的概述
 集合、数组都是对多个数据进行存储操作的结构，简称**Java容器**。 说明：此时的存储，主要指的是内存层面的存储，不涉及到持久化的存储（.txt .jpg等）。<br>
 以下描述引用于onJava 8：<br>
 集合（Collection） ：一个独立元素的序列，这些元素都服从一条或多条规则。List 必须以插入的顺序保存元素， Set 不能包含重复元素， Queue 按照排队规则来确定对象产生的顺序（通常与它们被插入的顺序相同）
 
 
-## 2、关于数组的概述
+### 2、关于数组的概述
 数组在存储多个数据方面的特点：<br>
 ① 一旦初始化以后，其长度就确定了;<br>
 ② 数组一旦定义好，其元素的类型也就确定了。我们也就只能操作指定类型的数据了。比如：`String[] string;int[] int`。<br>
@@ -22,7 +21,7 @@ tags:
 ③ 获取数组中实际元素的个数的需求，数组没有现成的属性或方法可用。<br>
 ④ 数组存储数据的特点：有序、可重复。对于无序、不可重复的需求，不能满足。<br>
 
-## 3、集合涉及的接口、实现类
+### 3、集合涉及的接口、实现类
 
 |----Collection接口：单列集合，用来存储一个一个的对象<br>
 &emsp;|----List接口：存储有序的、可重复的数据。   <br>
@@ -37,7 +36,7 @@ List是Collection的子接口，ArrayList、LinkedList、Vector是List接口的�
 
 HashMap、LinkedHashMap、TreeMap、Hashtable、Properties是Map接口的实现类。
 
-## 4、Collection接口中常用方法
+### 4、Collection接口中常用方法
 <pre><code>
 增：add(Object obj)
 删：remove(int index) / remove(Object obj)
@@ -51,7 +50,7 @@ HashMap、LinkedHashMap、TreeMap、Hashtable、Properties是Map接口的实现�
 ③普通的循环
 </code></pre>
 
-## 5、ArrayList、LinkedList、Vector三者的异同
+### 5、ArrayList、LinkedList、Vector三者的异同
 相同点：三者都实现了List接口，存储的数据都是有序的、可重复的；
 
 不同点：
@@ -60,13 +59,13 @@ LinkedList：对于频繁的插入、删除操作，使用此类效率比ArrayLi
 Vector：作为List接口的古老实现类，线程安全的，效率低；底层使用Object[] elementData存储。
 
 
-## 6、ArrayList初始化解析
+### 6、ArrayList初始化解析
 <b>ArrayList源码分析之jdk 7：</b><br>
 
-```ArrayList list = new ArrayList();```
+`ArrayList list = new ArrayList();`
 执行该语句时，底层创建了长度是10的Object[]数组elementData;
 
-```list.add(123);```相当于```elementData[0] = new Integer(123);```
+`list.add(123);```相当于```elementData[0] = new Integer(123);`
 
 
 
@@ -100,16 +99,16 @@ private void ensureCapacityInternal(int minCapacity) {
 }
 </code></pre>
 
-上图为jdk 8中的ArrayList部分源码，在执行语句：```ArrayList list = new ArrayList();```时；底层Object[] elementData数组初始化为{},此时并没有创建长度为10的数组；<br>
+上图为jdk 8中的ArrayList部分源码，在执行语句：`ArrayList list = new ArrayList();`时；底层Object[] elementData数组初始化为{},此时并没有创建长度为10的数组；<br>
 
-在当第一次调用add()时：```list.add(123);```底层才创建了长度为10的数组，并将数据123添加到elementData数组中。<br>
+在当第一次调用add()时：`list.add(123);`底层才创建了长度为10的数组，并将数据123添加到elementData数组中。<br>
 
 小结：jdk 7 中的ArrayList的对象的数组创建类似于单例的饿汉式（提前造好）；而jdk8中的ArrayList的对象
 的数组创建类似于单例的懒汉式（需要时才初始化），延迟了数组的创建，节省内存。
 
 
 
-## 7、ArrayList扩容解析
+### 7、ArrayList扩容解析
 先附上jdk 8中ArrayList的有关扩容部分的源码，主要是grow()方法：
 
 <pre><code>
@@ -204,7 +203,7 @@ private void grow(int minCapacity) {
 <b>总结</b>：<br>
 创建集合的时候，如果能知道总长度是多少，最好定义集合的长度，避免因扩容带来的资源浪费和内存消耗。
 
-## 7、ArrayList遍历方式解析
+### 7、ArrayList遍历方式解析
 
 ArrayList遍历总的有三种：<br>
 1、通过普通for循环的方式；<br>
@@ -236,7 +235,7 @@ RandomAccess接口为ArrayList带来的好处：<br>
 
 注意，迭代器的快速失败行为无法得到保证，因为一般来说，不可能对是否出现不同步并发修改做出任何硬性保证。快速失败迭代器会尽最大努力抛出ConcurrentModificationException。因此，为提高这类迭代器的正确性而编写一个依赖于此异常的程序是错误的做法：迭代器的快速失败行为应该仅用于检测bug。
 
-## 8、ArrayList之多线程
+### 8、ArrayList之多线程
 
 ArrayList本身是线程不安全的，在多线程操作ArrayList时，需要使用：<br>
 `List list1 = Collections.synchronizedList(list);`<br>
