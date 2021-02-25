@@ -7,31 +7,24 @@ toc: true
 
 
 ### Map概述
-Map 提供了一个更通用的元素存储方法。Map 集合类用于存储元素对（称作“键”和“值”），其中每个键映射到一个值。从概念上而言，您可以将 List 看作是具有数值键的 Map。而实际上，除了 List 和 Map 都在定义 java.util 中外，两者并没有直接的联系。
-<!--more-->
+Map 提供了一个更通用的元素存储方法。
+Map 集合类用于存储元素对（称作“键”和“值”），其中每个键映射到一个值。<!--more-->
 
 ### Map的实现类
-① HashMap：作为Map的主要实现类；**线程不安全**的，效率高；可以存储null的key和value。
-② LinkedHashMap extends HashMap：保证在遍历map元素时，可以按照添加的顺序实现遍历。原因：在原有的HashMap底层结构基础上，添加了一对指针，指向前一个和后一个元素。对于频繁的遍历操作，此类执行效率高于HashMap。
+① HashMap：作为Map的主要实现类；无序的，**线程不安全**的，效率高；可以存储null的key和value。
+② LinkedHashMap extends HashMap：有序的；保证在遍历map元素时，可以按照添加的顺序实现遍历。原因：在原有的HashMap底层结构基础上，添加了一对指针，指向前一个和后一个元素。对于频繁的遍历操作，此类执行效率高于HashMap。
 ③ TreeMap：保证按照添加的key-value键值对进行排序，实现排序遍历。此时key的自然排序或定制排序；底层使用红黑树存储。
 ④ Hashtable：作为古老的实现类；线程安全的，效率低；不能存储null的key和value。
 ⑤ Properties extends Hashtable：常用来处理配置文件。key和value都是String类型。
 
 ### HashMap的底层实现原理
 
-以jdk7为例说明：
-`HashMap map = new HashMap();`
-在实例化以后，底层创建了长度是16的一维数组`Entry[] table`。
-`map.put(key1,value1);`
-首先，调用key1所在类的hashCode()计算key1哈希值，此哈希值经过某种算法计算以后，得到在Entry数组中的存放位置。
-如果此位置上的数据为空，此时key1和value1添加成功。	--->情况1
-如果此位置上的数据不为空，（意味着此位置上存在一个或多个数据（以链表形式存在）），比较key1和已经存在的一个或多个数据的哈希值：
-&emsp;如果key1的哈希值与已经存在的数据的哈希值都不相同；此时key1和value1添加成功。	--->情况2
-&emsp;如果key1的哈希值与已经存在的某个数据的哈希值相同。继续比较：调用key1所在类的equals()方法，比较：
-&emsp;&emsp;如果equals返回false，此时key1和value1添加成功；	--->情况3
-&emsp;&emsp;如果equals返回true，使用新的value替换旧的value。
+首先以jdk7为例说明：
+`HashMap map = new HashMap();`执行后：
+底层创建了长度是16的一维数组`Entry[] table`。
+`map.put(key1,value1);`执行后：
 
-补充：关于情况2和情况3：此时key1-value1和原来的数据以链表的方式存储。
+
 
 在不断的添加过程中，会涉及扩容问题，当超出临界值（且要存放的位置非空）时，扩容。默认的扩容方式：扩容为原来容量的2倍，并将原有数据复制过来
 

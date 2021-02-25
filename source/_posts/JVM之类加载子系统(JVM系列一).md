@@ -1,17 +1,16 @@
 ---
-title: JVM之类加载子系统
+title: JVM之类加载子系统(JVM系列一)
 toc: true
 date: 2021-01-19 15:37:41
-categories: Java
+categories: JVM
 tags: Java进阶
 ---
 
 
 ## JVM基本概念
-Java虚拟机作用：就是二进制字节码的运行环境，负责装载字节码到期内部，解释/编译为对应平台上的机器指令执行。
-<!--more-->
+Java虚拟机（英语：Java Virtual Machine，缩写为JVM），一种能够运行Java bytecode的虚拟机，以堆栈结构机器来进行实做。最早由Sun微系统所研发并实现第一个实现版本，是Java平台的一部分，能够运行以Java语言写作的软件程序。<!--more-->
+Java虚拟机作用：就是二进制字节码的运行环境，负责装载字节码到其内部，解释/编译为对应平台上的机器指令执行。
 由于跨平台性的设计，Java的指令都是根据栈来设计的。
-
 JVM的生命周期：启动、运行、退出。
 
 ## JVM整体架构
@@ -20,7 +19,7 @@ JVM的生命周期：启动、运行、退出。
 ## 类加载器与类的加载过程
 
 类加载器子系统负责从文件系统或者网络中加载Class文件，Class文件在文件开头有特定的文件标识。
-ClassLoader只负责class文件的加载，至于它是否可以运行，则有Execution Engine决定。
+ClassLoader只负责class文件的加载，至于它是否可以运行，则由Execution Engine决定。
 
 
 ### 类加载过程
@@ -35,42 +34,39 @@ ClassLoader只负责class文件的加载，至于它是否可以运行，则有E
 3. 在内存中生成一个代表这个类的java.lang.Class对象，作为方法区这个类的各种数据的访问入口。
 
 #### 链接
-验证：
+**验证：**
 目的在于确保Class文件的字节流中包含的信息符合当前虚拟机要求，保证被加载类的正确性；主要包括四种验证：文件格式验证、元数据验证、字节码验证、符号引用验证。
 
-准备：
+**准备：**
 为类变量分配内存，并设置该类变量的默认初始值。
 这里不包含用final修饰的static，因为final在编译的时候就会分配了，准备阶段会显示初始化。
-这里不会为实例变量分配初始化。
+注意，这里不会为实例变量分配初始化。
 
-解析：
+**解析：**
 将常量池内的符号引用转换为直接引用的过程。
 
 #### 初始化
-初始化阶段就是执行类构造器方法<clinit>()的过程。
-<clinit>()不同于类的构造器。
-若该类具有父类，JVM会保证子类的<clinit>()执行前，父类的<clinit>()已经执行完毕。
-虚拟机必须保证一个类的<clinit>()方法在多线程下被同步加锁，确保只被加载一次。
+初始化阶段就是执行类构造器方法`<clinit>()`的过程。
+`<clinit>()`不同于类的构造器。
+若该类具有父类，JVM会保证子类的`<clinit>()`执行前，父类的`<clinit>()`已经执行完毕。
+虚拟机必须保证一个类的`<clinit>()`方法在多线程下被同步加锁，确保只被加载一次。
 
 ### 类加载器的分类
 JVM支持两种类型的类加载器，分别为引导类加载器（Bootstrap ClassLoader）和自定义类加载器（User-Defined ClassLoader）。
 Java虚拟机规范将所有派生于抽象类ClassLoader的类加载器都划分为自定义类加载器。
 
 #### 引导类加载器（启动类加载器，Bootstrap ClassLoader）
-引导类加载器：
 用C++编写的，是JVM自带的类加载器，负责Java平台核心库，用来装载核心类库。
 该加载器无法直接获取。
 并不继承自java.lang.ClassLoader，没有父加载器。
 出于安全考虑，Bootstrap启动类加载器只加载包名为java、javax、sun等开头的类。
 
 #### 扩展类加载器（Extension ClassLoader）
-扩展类加载器：
-负责jre/lib/ext目录下的jar包或- D java.ext.dirs 指定目录下的jar包装入工作库。派生于ClassLoader类。
+负责jre/lib/ext目录下的jar包或-D java.ext.dirs 指定目录下的jar包装入工作库。派生于ClassLoader类。
 父类加载器为启动类加载器。
 
 #### 系统类加载器（应用程序类加载器，System ClassLoader）
-系统类加载器：
-负责java-classpath 或 -D java.class.path所指的目录下的类与jar包装入工作库，是最常用的加载器。
+负责java -classpath 或 -D java.class.path所指的目录下的类与jar包装入工作库，是最常用的加载器。
 派生于ClassLoader类。
 父类加载器为扩展类加载器。
 该类加载时程序中默认的类加载器，一般来说，Java应用的类都是由它来完成加载。
@@ -100,11 +96,11 @@ DriverManager.getCallerClassLoader()
 
 优势：
 1、避免类的重复加载；
-2、保护程序安全，防止核心API被随意篡改
+2、保护程序安全，防止核心API被随意篡改。
 
 ### 沙箱安全机制
 
-自定义String类，但是在加载自定义String类的时候会率先使用引导类加载器加载，而引导类加载器在加载的过程中会先加载jdk自带的文件(rt.jar包中java\lang\String.class)，报错信息说没有main方法就是因为加载的是rt.jar包中的String类。这样可以保证对java核心源代码的保护，这就是沙箱安全机制。
+如果你自定义了String类，但是在加载自定义String类的时候会率先使用引导类加载器加载，而引导类加载器在加载的过程中会先加载jdk自带的文件(rt.jar包中java\lang\String.class)；此时会报错，报错信息说没有main方法，因为加载的是rt.jar包中的String类。这样就可以保证对java核心源代码的保护，避免核心类被篡改，这就是沙箱安全机制。
 
 
 ## 其他
