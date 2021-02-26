@@ -6,42 +6,40 @@ toc: true
 ---
 
 
-### Map概述
+## Map概述
 Map 提供了一个更通用的元素存储方法。
 Map 集合类用于存储元素对（称作“键”和“值”），其中每个键映射到一个值。<!--more-->
 
-### Map的实现类
+## Map的实现类
 ① HashMap：作为Map的主要实现类；无序的，**线程不安全**的，效率高；可以存储null的key和value。
 ② LinkedHashMap extends HashMap：有序的；保证在遍历map元素时，可以按照添加的顺序实现遍历。原因：在原有的HashMap底层结构基础上，添加了一对指针，指向前一个和后一个元素。对于频繁的遍历操作，此类执行效率高于HashMap。
 ③ TreeMap：保证按照添加的key-value键值对进行排序，实现排序遍历。此时key的自然排序或定制排序；底层使用红黑树存储。
 ④ Hashtable：作为古老的实现类；线程安全的，效率低；不能存储null的key和value。
 ⑤ Properties extends Hashtable：常用来处理配置文件。key和value都是String类型。
 
-### HashMap的底层实现原理
+## HashMap的底层实现原理
 
 首先以jdk7为例说明：
 `HashMap map = new HashMap();`执行后：
 底层创建了长度是16的一维数组`Entry[] table`。
 `map.put(key1,value1);`执行后：
+![HashMap调用put方法过程](https://github.com/BlueOzone/BlueOzone.github.io/blob/hexo/source/_posts/img/HashMap%E8%B0%83%E7%94%A8put%E6%96%B9%E6%B3%95%E8%BF%87%E7%A8%8B.png?raw=true)
 
-
-
-在不断的添加过程中，会涉及扩容问题，当超出临界值（且要存放的位置非空）时，扩容。默认的扩容方式：扩容为原来容量的2倍，并将原有数据复制过来
-
+在不断的添加过程中，会涉及扩容问题，当超出临界值（且要存放的位置非空）时，会扩容。默认的扩容方式：扩容为原来容量的2倍，并将原有数据复制过来。
 
 jdk8 相较于jdk7在底层实现方面的不同：
-1.new HashMap()：底层没有创建一个长度为16的数组
-2.jdk 8底层的数组是：Node[]，而非Entry[]
-3.首次调用put()方法时，底层创建长度为16的数组
-4.jdk 7底层结构只有：数组+链表。jdk 8中底层结构：数组+链表+红黑树。
-当数组的某一个索引位置上的元素以链表形式存在的数据个数 > 8且当前数组的长度 >64时，
-此时此索引位置上的所有数据改为使用红黑树存储。
+（1）new HashMap()：底层并没有直接创建一个长度为16的数组；而是等到第一次put()的时候才会创建；
+（2）jdk 8底层的数组是：Node[]，而非Entry[]；
+（3）首次调用put()方法时，底层才创建长度为16的数组；
+（4）jdk 7底层结构只有：数组+链表；jdk 8中底层结构：数组+链表+红黑树。
+当数组的某一个索引位置上的元素以链表形式存在的数据个数 > 8 且当前数组的长度 > 64 时，
+此时此索引位置上的所有数据会改为使用红黑树存储。
 
-DEFAULT\_INITIAL\_CAPACITY：HashMap的默认容量：16
-DEFAULT\_LOAD\_FACTOR：HashMap的默认加载因子：0.75
-threadold：扩容的临界值=容量\*填充因子：16\*0.75 => 12
-TREEIFY\_THRESHOLD：Bucket中链表长度大于该默认值，转化为红黑树：8
-MIN\_TREEIFY\_CAPACITY：桶中的Node被树化时最小的hash表容量：64
+`DEFAULT_INITIAL_CAPACITY`：HashMap的默认容量：16
+`DEFAULT_LOAD_FACTOR`：HashMap的默认加载因子：0.75
+`threadold`：扩容的临界值=容量\*填充因子：16\*0.75 = 12
+`TREEIFY_THRESHOLD`：Bucket中链表长度大于该默认值，转化为红黑树：8
+`MIN_TREEIFY_CAPACITY`：桶中的Node被树化时最小的hash表容量：64
 
 以下附上HashMap部分源码及其解析：
 
@@ -67,14 +65,15 @@ static final int MIN_TREEIFY_CAPACITY = 64;
 //put方法
 public V put(K key, V value) {
 	//计算key的hash值传入putVal方法
-    return putVal(hash(key), key, value, false, true);
+	return putVal(hash(key), key, value, false, true);
 }
 static final int hash(Object key) {
-    int h;
+	int h;
 	//hash值计算方法
 	//若key==null，hash=0;
-	//key.hashCode()函数调用的是key键值类型自带的哈希函数，返回int型散列值，然后做一次16位右位移异或混合计算得出hash值；右位移16位，正好是32bit的一半，自己的高半区和低半区做异或，就是为了混合原始哈希码的高位和低位，以此来加大低位的随机性。
-    return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+	//key.hashCode()函数调用的是key键值类型自带的哈希函数，返回int型散列值，然后做一次16位右位移异或混合计算得出hash值；
+	//右位移16位，正好是32bit的一半，自己的高半区和低半区做异或，就是为了混合原始哈希码的高位和低位，以此来加大低位的随机性。
+	return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
 }
 
 final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
@@ -147,7 +146,7 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 ```
 
 
-### Map中的方法
+## Map中的方法
 
 **添加、删除、修改操作：**
 Object put(Object key,Object value)：将指定的key-value添加到（或修改到）当前map对象中
@@ -168,9 +167,9 @@ Collection values()：返回所有value构成的Collection集合
 Set entrySet()：返回所有key-value键值对构成的Set集合
 
 
-### 线程安全的几种Map
+## 线程安全的几种Map
 
-#### ConcurrentHashMap - 推荐
+### ConcurrentHashMap - 推荐
 * 当你程序需要高度的并行化的时候，你应该使用ConcurrentHashMap；
 * 尽管没有同步整个Map，但是它仍然是线程安全的；
 * 读操作非常快，而写操作则是通过加锁完成的；
@@ -179,9 +178,10 @@ Set entrySet()：返回所有key-value键值对构成的Set集合
 * ConcurrentHashMap不会抛出ConcurrentModificationException，即使一个线程在遍历的同时，另一个线程尝试进行修改；
 * ConcurrentHashMap会使用多个锁。
 
-#### SynchronizedMap
+### SynchronizedMap
 这种是直接使用工具类里面的方法创建SynchronizedMap，把传入进行的HashMap对象进行了包装同步。
-用法：`Map<String, Object> map22 = Collections.synchronizedMap(new HashMap<String, Object>());`
+用法：
+`Map<String, Object> map22 = Collections.synchronizedMap(new HashMap<String, Object>());`
 
 * 会同步整个对象；
 * 每一次的读写操作都需要加锁；
@@ -190,7 +190,7 @@ Set entrySet()：返回所有key-value键值对构成的Set集合
 * 它有可能造成资源冲突（某些线程等待较长时间）；
 * SynchronizedHashMap会返回Iterator，当遍历时进行修改会抛出异常。
 
-#### HashTable
+### HashTable
 HashTable作为古老的实现类；线程安全的，效率低；不能存储null的key和value。
 用法：`Map<String, Object> map33 = new Hashtable<>();`
 通过查阅HashTable的源码可以知道，HashTable初始化的容量是11，加载因子为0.75：
@@ -244,8 +244,54 @@ public synchronized V put(K key, V value) {
 ```
 
 
+## Map相关面试题
 
+### HashMap 和 Hashtable 的区别
+（1）**线程是否安全：** HashMap 是非线程安全的，HashTable 是线程安全的,因为 HashTable 内部的方法基本都经过synchronized 修饰。（如果你要保证线程安全的话就使用 ConcurrentHashMap 吧！）；
+（2）**效率：** 因为线程安全的问题，HashMap 要比 HashTable 效率高一点。另外，HashTable 基本被淘汰，不要在代码中使用它；
+（3）**对 Null key 和 Null value 的支持：** HashMap 可以存储 null 的 key 和 value，但 null 作为键只能有一个，null 作为值可以有多个；HashTable 不允许有 null 键和 null 值，否则会抛出 NullPointerException。
+（4）**初始容量大小和每次扩充容量大小的不同 ：** ① 创建时如果不指定容量初始值，Hashtable 默认的初始大小为 11，之后每次扩充，容量变为原来的 2n+1。HashMap 默认的初始化大小为 16。之后每次扩充，容量变为原来的 2 倍。② 创建时如果给定了容量初始值，那么 Hashtable 会直接使用你给定的大小，而 HashMap 会将其扩充为 2 的幂次方大小（HashMap 中的tableSizeFor()方法保证，下面给出了源代码）。也就是说 HashMap 总是使用 2 的幂作为哈希表的大小,后面会介绍到为什么是 2 的幂次方。
+（5）**底层数据结构：** JDK1.8 以后的 HashMap 在解决哈希冲突时有了较大的变化，当链表长度大于阈值（默认为 8）（将链表转换成红黑树前会判断，如果当前数组的长度小于 64，那么会选择先进行数组扩容，而不是转换为红黑树）时，将链表转化为红黑树，以减少搜索时间。Hashtable 没有这样的机制。
 
+### HashMap 和 HashSet 区别
+如果你看过 HashSet 源码的话就应该知道：HashSet 底层就是基于 HashMap 实现的。（HashSet 的源码非常非常少，因为除了 clone()、writeObject()、readObject()是 HashSet 自己不得不实现之外，其他方法都是直接调用 HashMap 中的方法。
+
+### HashSet 如何检查重复
+由于HashSet 底层就是基于 HashMap 实现的，所以根据前面的put()流程图可以知道：
+当你把对象加入HashSet时，HashSet 会先计算对象的hashcode值来判断对象加入的位置，同时也会与其他加入的对象的 hashcode 值作比较，如果没有相符的 hashcode，HashSet 会假设对象没有重复出现。但是如果发现有相同 hashcode 值的对象，这时会调用equals()方法来检查 hashcode 相等的对象是否真的相同。如果两者相同，HashSet 就不会让加入操作成功。
+
+**hashCode()与 equals() 的相关规定：**
+
+（1）如果两个对象相等，则 hashcode 一定也是相同的；
+（2）两个对象相等,对两个 equals() 方法返回 true；
+（3）两个对象有相同的 hashcode 值，它们也不一定是相等的；
+（4）综上，equals() 方法被覆盖过，则 hashCode() 方法也必须被覆盖；
+（5）hashCode() 的默认行为是对堆上的对象产生独特值。如果没有重写 hashCode()，则该 class 的两个对象无论如何都不会相等（即使这两个对象指向相同的数据）。
+
+**==与 equals 的区别**
+
+对于基本类型来说，== 比较的是值是否相等；
+对于引用类型来说，== 比较的是两个引用是否指向同一个对象地址（两者在内存中存放的地址（堆内存地址）是否指向同一个地方）；
+对于引用类型（包括包装类型）来说，equals 如果没有被重写，对比它们的地址是否相等；如果 equals()方法被重写（例如 String），则比较的是地址里的内容。
+
+### ConcurrentHashMap 和 Hashtable 的区别
+ConcurrentHashMap 和 Hashtable 的区别主要体现在实现线程安全的方式上不同。
+
+* **底层数据结构：** JDK1.7 的 ConcurrentHashMap 底层采用 分段的数组+链表 实现，JDK1.8 采用的数据结构跟 HashMap1.8 的结构一样，数组+链表/红黑二叉树。Hashtable 和 JDK1.8 之前的 HashMap 的底层数据结构类似都是采用 数组+链表 的形式，数组是 HashMap 的主体，链表则是主要为了解决哈希冲突而存在的；
+* **实现线程安全的方式（重要）：** ① 在 JDK1.7 的时候，ConcurrentHashMap（分段锁） 对整个桶数组进行了分割分段(Segment)，每一把锁只锁容器其中一部分数据，多线程访问容器里不同数据段的数据，就不会存在锁竞争，提高并发访问率。 到了 JDK1.8 的时候已经摒弃了 Segment 的概念，而是直接用 Node 数组+链表+红黑树的数据结构来实现，并发控制使用 synchronized 和 CAS 来操作。（JDK1.6 以后 对 synchronized 锁做了很多优化） 整个看起来就像是优化过且线程安全的 HashMap，虽然在 JDK1.8 中还能看到 Segment 的数据结构，但是已经简化了属性，只是为了兼容旧版本；② Hashtable(同一把锁) :使用 synchronized 来保证线程安全，效率非常低下。当一个线程访问同步方法时，其他线程也访问同步方法，可能会进入阻塞或轮询状态，如使用 put 添加元素，另一个线程不能使用 put 添加元素，也不能使用 get，竞争会越来越激烈效率越低。
+
+### ConcurrentHashMap 线程安全的具体实现方式/底层具体实现
+ConcurrentHashMap 取消了 Segment 分段锁，采用 CAS 和 synchronized 来保证并发安全。数据结构跟 HashMap1.8 的结构类似，数组+链表/红黑二叉树。Java 8 在链表长度超过一定阈值（8）时将链表（寻址时间复杂度为 O(N)）转换为红黑树（寻址时间复杂度为 O(log(N))）
+
+synchronized 只锁定当前链表或红黑二叉树的首节点，这样只要 hash 不冲突，就不会产生并发，效率又提升 N 倍。
+
+### HashMap遍历方式
+HashMap 遍历从大的方向来说，可分为以下 4 类：
+
+（1）迭代器（Iterator）方式遍历；
+（2）For Each 方式遍历；
+（3）Lambda 表达式遍历（JDK 1.8+）；
+（4）Streams API 遍历（JDK 1.8+）。
 
 
 
