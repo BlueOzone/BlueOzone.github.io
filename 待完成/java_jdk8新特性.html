@@ -1,0 +1,115 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta name="generator" content="Hexo 3.9.0"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>Java-JDK8新特性 | 雨落花下c</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/normalize.css/normalize.min.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/purecss/build/pure-min.min.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="//cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script><link rel="icon" mask sizes="any" href="/favicon.ico"><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"><script type="text/javascript" src="//cdn.jsdelivr.net/npm/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="//cdn.jsdelivr.net/gh/codeseven/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="//cdn.jsdelivr.net/gh/codeseven/toastr/build/toastr.min.css"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Java-JDK8新特性</h1><a id="logo" href="/.">雨落花下c</a><p class="description"></p></div><div id="nav-menu"><a href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a><a href="/atom.xml"><i class="fa fa-rss"> 订阅</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">Java-JDK8新特性</h1><div class="post-content"><h3><span id="1-io流">1、IO流</span></h3><p>流是一种抽象概念，它代表了数据的无结构化传递。按照流的方式进行输入输出，数据被当成无结构的字节序或字符序列。从流中取得数据的操作称为提取操作，而向流中添加数据的操作称为插入操作。用来进行输入输出操作的流就称为IO流。换句话说，IO流就是以流的方式进行输入输出。<br><br>输入input：读取外部数据（磁盘、光盘等存储设备的数据）到程序（内存）中；<br><br>输出output：将程序（内存）数据输出到磁盘、光盘等存储设备中。<br></p>
+<h3><span id="2-流的分类">2、流的分类</span></h3><p>按操作数据单位不同分为：字节流（8bit），字符流（16bit）<br><br>按数据流的流向不同分为：输入流，输出流<br><br>按流的角色的不同分为：节点流，处理流<br></p>
+<h3><span id="3-流的体系结构">3、流的体系结构</span></h3><p>抽象基类&emsp;&emsp;&emsp;节点流（或文件流）&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;缓冲流（处理流的一种）<br><br>InputStream&emsp;&emsp;FileInputStream(read(byte[] buffer))                &emsp;&emsp;&emsp;BufferedInputStream(read(byte[] buffer))<br><br>OutputStream&emsp;&emsp;FileOutputStream(write(byte[] buffer,0,len))        BufferedOutputStream(write(byte[] buffer,0,len))<br><br>Reader&emsp;&emsp;&emsp;&emsp;FileReader(read(char[] cbuf))                       &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;BufferedReader(read(char[] cbuf)|readline())<br><br>Writer&emsp;&emsp;&emsp;&emsp;&emsp;FileWriter(write(char[] cbuf,0,len))&emsp;&emsp;&emsp;&emsp;BufferedWriter(write(char[] cbuf,0,len))<br></p>
+<h3><span id="4-使用fileinputstream从磁盘中读取文件">4、使用FileInputStream从磁盘中读取文件</span></h3><pre><code>
+/*
+说明点：
+1.read()的理解：返回读入的一个字符。如果达到文件末尾，返回-1
+2.异常的处理：为了保证流资源一定可以执行关闭操作。需要使用try-catch-finally处理
+3.读入的文件一定要存在，否则就会报FileNotFoundException
+ */
+
+@Test
+public void test() throws IOException {
+    File file1 = new File("C:\\Users\\Bangsun\\Desktop\\hello.txt");
+    FileInputStream fileInputStream = new FileInputStream(file1);
+
+    FileReader fileReader = new FileReader(file1);
+
+    int data = fileReader.read();
+    List<string> list = new ArrayList<>();
+    while (data != -1){
+        list.add(String.valueOf((char) data));
+        data = fileReader.read();
+    }
+
+    fileReader.close();
+    System.out.println(list);
+
+}
+</string></code></pre>
+
+
+<h3><span id="5-使用filewriter把内容写进磁盘中">5、使用FileWriter把内容写进磁盘中</span></h3><pre><code>
+/*
+FileWriter
+说明：
+1.输出操作，对应的File可以不存在，并不会报异常；
+        如果不存在，在输出的过程中，会自动创建此文件；
+        如果存在:
+            若流使用的构造器是：new FileWriter(file1,false)|new FileWriter(file1)：会对原有文件进行覆盖；
+            若流使用的构造器是：new FileWriter(file1,true)：不会对原有文件进行覆盖，而是在原有文件基础上追加内容。
+ */
+@Test
+public void test3(){
+
+    FileWriter fileWriter = null;
+    try {
+        File file1 = new File("C:\\Users\\Bangsun\\Desktop\\hello.txt");
+
+        fileWriter = new FileWriter(file1,true);
+
+        fileWriter.write("ssssssssssstest");
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            fileWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+</code></pre>
+
+
+
+
+<h3><span id="6-处理流之一缓冲流的使用">6、处理流之一：缓冲流的使用</span></h3><ul>
+<li>1.缓冲流</li>
+<li>BufferedInputStream</li>
+<li>BufferedOutputStream</li>
+<li>BufferedReader</li>
+<li>BufferedWriter</li>
+</ul>
+<p>2.作用：提高流的读取、写入的速度<br><br>提高读写速度的原因：内部提供了一个缓冲区，读写的时候先将缓冲区装满后再继续。默认是8kb</p>
+<h3><span id="7-fileinputstream与fileoutputstream">7、FileInputStream与FileOutputStream</span></h3><ul>
+<li>结论：</li>
+<li>1.对于文本文件(.txt,.java,.c,.cpp)，使用字符流处理</li>
+<li>2.对于非文本文件(.jpg,.mp4,.doc,.avi,.ppt)，需要使用字节流处理</li>
+<li></li>
+<li>对于单纯的复制操作，可以使用字节流复制文本文件的内容，输出到控制台的话可能会有中文乱码的情况</li>
+<li>说明：</li>
+<li>若使用字节流处理文本文件，是会可能出现乱码的</li>
+</ul>
+<h3><span id="8-处理流之二转换流的使用">8、处理流之二：转换流的使用</span></h3><ul>
+<li>处理流之二：转换流的使用</li>
+<li>1.转换流：属于字符流</li>
+<li>InputStreamReader：将一个字节的输入流转换为字符的输入流（可以理解为编码）</li>
+<li>OnputStreamWriter：将一个字符的输出流转换为字节的输出流（可以理解为解码）</li>
+<li></li>
+<li>2.提供字节流与字符流之间的转换</li>
+<li></li>
+<li>3.解码：字节、字节数组 —&gt; 字符串、字符数组</li>
+<li>编码：字符串、字符数组 —&gt; 字节、字节数组</li>
+<li></li>
+<li>4.字符集</li>
+<li>ASCII：美国标准信息交换码</li>
+<li>用一个字节的7位可以表示</li>
+<li>ISO8859-1：拉丁码表。欧洲码表</li>
+<li>用一个字节的8位表示</li>
+<li>GB2312：中国的中文编码表。最多两个字节编码所有字符</li>
+<li>GBK：中国的中文编码表升级，融合了更多的中文文字符号最多两个字节编码</li>
+<li>Unicode：国际标准码，融合了目前人类使用的所有字符。为每个字符分配唯一的字符码。所有的文字都用两个字节来表示</li>
+<li>UTF-8：变长的编码方式，可用1-4个字节来表示一个字符。</li>
+</ul>
+<h3><span id="9-其他流的使用">9、其他流的使用</span></h3><ul>
+<li>1.标准的输入、输出流</li>
+<li>2.打印流</li>
+<li>3.数据流</li>
+</ul>
+<p>1.标准的输入、输出流<br>1.1<br>System.in：标准的输入流，默认从键盘输入<br>System.out：标准的输出流，默认从控制台输出<br>1.2<br>System类的setIn(Inputstream is) / setOut(PrintStream in)方式重新指定输入和输出的流。</p>
+<br>
+3.数据流<br>
+3.1 DataInputStream 和 DataOutputStream;<br>
+3.2 作用：用于读取或写出基本数据类型的变量或字符串。<br></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><form class="search-form" action="//www.google.com/search" method="get" accept-charset="utf-8" target="_blank"><input type="text" name="q" maxlength="20" placeholder="Search"><input type="hidden" name="sitesearch" value="http://yoursite.com"></form></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java/">Java</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/等级保护/">等级保护</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> 标签</i></div><div class="tagcloud"><a href="/tags/Java进阶/" style="font-size: 15px;">Java进阶</a> <a href="/tags/Python/" style="font-size: 15px;">Python</a> <a href="/tags/Java基础/" style="font-size: 15px;">Java基础</a> <a href="/tags/Redis技术/" style="font-size: 15px;">Redis技术</a> <a href="/tags/等级保护/" style="font-size: 15px;">等级保护</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2021/02/26/java_IO流/">Java-IO流</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/02/26/java_Map/">Java-Map之HashMap</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/02/26/java_反射/">Java-反射</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/02/26/java_多线程/">Java-多线程</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/02/26/redis初识/">Redis初识(基本理论)</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/02/20/JVM之方法区(JVM系列四)/">JVM之方法区(JVM系列四)</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/02/20/JVM之对象的实例化内存布局与访问定位(JVM系列五)/">JVM之对象的实例化内存布局与访问定位(JVM系列五)</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/02/02/JVM之堆(JVM系列三)/">JVM之堆(JVM系列三)</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/01/21/JVM之运行时数据区概述及线程(JVM系列二)/">JVM之运行时数据区概述及线程(JVM系列二)</a></li><li class="post-list-item"><a class="post-list-link" href="/2021/01/19/JVM之类加载子系统(JVM系列一)/">JVM之类加载子系统(JVM系列一)</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> 友情链接</i></div></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2021 <a href="/." rel="nofollow">雨落花下c.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=0.0.0" async></script><script type="text/javascript" src="//cdn.jsdelivr.net/gh/fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=0.0.0" async></script><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox/dist/jquery.fancybox.min.css"><script type="text/javascript" src="/js/copycode.js" successtext="复制成功!"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css"><script type="text/javascript" src="/js/codeblock-resizer.js?v=0.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=0.0.0"></script></div></body></html>
