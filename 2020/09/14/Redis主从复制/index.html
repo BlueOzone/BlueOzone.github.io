@@ -3,25 +3,16 @@
 
 <h2><span id="redis主从复制概述">Redis主从复制概述</span></h2><p>Redis主从复制：主机数据更新后根据配置和策略，自动会以异步复制的方式，同步数据到备机的机制；通常主机称为master，从机称为slave。master一般以写为主，slave一般以读为主，即读写分离。</p>
 <p>Redis主从复制能用来干嘛：</p>
-<p>（1）读写分离：主节点提供写服务，从节点提供读服务；提高Redis服务器的并发量。</p>
-<p>（2）容灾恢复：当主节点发生故障无法服务，可以由从节点继续提供服务，实现故障的快速恢复。</p>
-<p>（3）数据冗余：主从复制实现了数据的热备份，是持久化之外的一种数据冗余方式。</p>
-<p>（4）高可用的基石：主从复制还是哨兵和主从集群能够实施的基础，因此说主从复制是Redis高可用的基础。</p>
+<p>（1）读写分离：主节点提供写服务，从节点提供读服务；提高Redis服务器的并发量。<br>（2）容灾恢复：当主节点发生故障无法服务，可以由从节点继续提供服务，实现故障的快速恢复。<br>（3）数据冗余：主从复制实现了数据的热备份，是持久化之外的一种数据冗余方式。<br>（4）高可用的基石：主从复制还是哨兵和主从集群能够实施的基础，因此说主从复制是Redis高可用的基础。</p>
 <h2><span id="redis主从复制操作">Redis主从复制操作</span></h2><p>开启主从复制，一般有以下三种方式：</p>
-<p>（1）配置文件中配置：<code>slaveof masterip masterport</code>在该配置文件中加入这个，指定成为谁的从机。</p>
-<p>（2）Redis服务启动时配置：<code>redis-server redis.conf --slaveof masterip masterport</code>；在服务启动的时候指定成为谁的从机。</p>
-<p>（3）Redis服务启动后通过客户端配置：<code>slaveof masterip masterport</code>：输入该命令后，本机成为从机，本机原本的数据也会不存在，跟主机的数据保持一致。</p>
-<p>关闭主从复制：</p>
-<p><code>slaveof no one</code>：使本机成为主数据库，也就结束了与其他数据库的同步。</p>
+<p>（1）配置文件中配置：<code>slaveof masterip masterport</code>在该配置文件中加入这个，指定成为谁的从机。<br>（2）Redis服务启动时配置：<code>redis-server redis.conf --slaveof masterip masterport</code>；在服务启动的时候指定成为谁的从机。<br>（3）Redis服务启动后通过客户端配置：<code>slaveof masterip masterport</code>：输入该命令后，本机成为从机，本机原本的数据也会不存在，跟主机的数据保持一致。</p>
+<p>关闭主从复制：<br><code>slaveof no one</code>：使本机成为主数据库，也就结束了与其他数据库的同步。</p>
 <h2><span id="redis主从复制实现过程">Redis主从复制实现过程</span></h2><p>Redis主从复制过程大致分为三个步骤：</p>
-<p>（1）连接建立阶段：主从节点之间建立连接，为数据同步做好准备。</p>
-<p>（2）数据同步阶段：是主从复制最核心的阶段，根据主从节点当前状态的不同，可以分为全量复制和部分复制。</p>
-<p>（3）命令传播阶段：在这个阶段主节点将自己执行的写命令发送给从节点，从节点接收命令并执行，从而保证主从节点数据的一致性。</p>
+<p>（1）连接建立阶段：主从节点之间建立连接，为数据同步做好准备。<br>（2）数据同步阶段：是主从复制最核心的阶段，根据主从节点当前状态的不同，可以分为全量复制和部分复制。<br>（3）命令传播阶段：在这个阶段主节点将自己执行的写命令发送给从节点，从节点接收命令并执行，从而保证主从节点数据的一致性。</p>
 <p>在本次例子中我使用了第三种方式创建主从复制，也就是连接客户端后输入<code>slaveof masterip masterport</code>命令去复制，输入完这个命令后，Redis的日志如下，里面记录了在这之后具体发生了什么事情：</p>
 <figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">27962</span>:S <span class="number">23</span> Apr <span class="number">12</span>:<span class="number">09</span>:<span class="number">11.774</span> * Before turning into a <span class="literal">slave</span>, using my <span class="keyword">master</span> <span class="title">parameters</span> to synthesize a cached <span class="literal">master</span>: I may be able to synchronize with the new <span class="keyword">master</span> <span class="title">with</span> just a partial transfer.</span><br><span class="line"><span class="comment">#保存主节点的信息</span></span><br><span class="line"><span class="number">27962</span>:S <span class="number">23</span> Apr <span class="number">12</span>:<span class="number">09</span>:<span class="number">11.776</span> * <span class="literal">SLAVE</span> OF <span class="number">127.0</span>.<span class="number">0.1</span>:<span class="number">26379</span> enabled (<span class="keyword">user</span> <span class="title">request</span> from '<span class="attr">id=</span><span class="number">4</span> <span class="attr">addr=</span><span class="number">127.0</span>.<span class="number">0.1</span>:<span class="number">26461</span> <span class="attr">fd=</span><span class="number">7</span> <span class="attr">name=</span> <span class="attr">age=</span><span class="number">43</span> <span class="attr">idle=</span><span class="number">0</span> <span class="attr">flags=</span>N <span class="attr">db=</span><span class="number">0</span> <span class="attr">sub=</span><span class="number">0</span> <span class="attr">psub=</span><span class="number">0</span> <span class="attr">multi=</span>-<span class="number">1</span> <span class="attr">qbuf=</span><span class="number">0</span> <span class="attr">qbuf-free=</span><span class="number">32768</span> <span class="attr">obl=</span><span class="number">0</span> <span class="attr">oll=</span><span class="number">0</span> <span class="attr">omem=</span><span class="number">0</span> <span class="attr">events=</span>r <span class="attr">cmd=</span>slaveof')</span><br><span class="line"><span class="comment">#建立socket连接</span></span><br><span class="line"><span class="number">27962</span>:S <span class="number">23</span> Apr <span class="number">12</span>:<span class="number">09</span>:<span class="number">12.596</span> * Connecting to <span class="keyword">MASTER</span> <span class="title">127</span>.<span class="number">0.0</span>.<span class="number">1</span>:<span class="number">26379</span></span><br><span class="line"><span class="number">27962</span>:S <span class="number">23</span> Apr <span class="number">12</span>:<span class="number">09</span>:<span class="number">12.598</span> * <span class="keyword">MASTER</span> <span class="title">&lt;-&gt; SLAVE</span> sync <span class="literal">started</span></span><br><span class="line"><span class="comment">#通过ping命令检测socket连接是否可用</span></span><br><span class="line"><span class="number">27962</span>:S <span class="number">23</span> Apr <span class="number">12</span>:<span class="number">09</span>:<span class="number">12.598</span> * Non blocking connect for SYNC fired the event.</span><br><span class="line"><span class="number">27962</span>:S <span class="number">23</span> Apr <span class="number">12</span>:<span class="number">09</span>:<span class="number">12.598</span> * <span class="keyword">Master</span> <span class="title">replied</span> to PING, replication can continue...</span><br><span class="line"><span class="number">27962</span>:S <span class="number">23</span> Apr <span class="number">12</span>:<span class="number">09</span>:<span class="number">12.599</span> * Trying a partial resynchronization (request <span class="number">21</span>fa80655747f5e0448ae8449ebf7c61664304cb:<span class="number">1</span>).</span><br><span class="line"><span class="number">27962</span>:S <span class="number">23</span> Apr <span class="number">12</span>:<span class="number">09</span>:<span class="number">12.601</span> * Full resync from <span class="literal">master</span>: cc4cce78d7d21fe6d93ce00825db1274c8b256f1:<span class="number">4606</span></span><br><span class="line"><span class="number">27962</span>:S <span class="number">23</span> Apr <span class="number">12</span>:<span class="number">09</span>:<span class="number">12.601</span> * Discarding previously cached <span class="keyword">master</span> <span class="title">state</span>.</span><br><span class="line"><span class="comment">#从机接收到来自主机的197比特的数据</span></span><br><span class="line"><span class="number">27962</span>:S <span class="number">23</span> Apr <span class="number">12</span>:<span class="number">09</span>:<span class="number">12.731</span> * <span class="keyword">MASTER</span> <span class="title">&lt;-&gt; SLAVE</span> sync: receiving <span class="number">197</span> bytes from <span class="literal">master</span></span><br><span class="line"><span class="comment">#从节点清除旧数据</span></span><br><span class="line"><span class="number">27962</span>:S <span class="number">23</span> Apr <span class="number">12</span>:<span class="number">09</span>:<span class="number">12.731</span> * <span class="keyword">MASTER</span> <span class="title">&lt;-&gt; SLAVE</span> sync: Flushing old data</span><br><span class="line"><span class="comment">#从节点把RDB中的数据载入内存</span></span><br><span class="line"><span class="number">27962</span>:S <span class="number">23</span> Apr <span class="number">12</span>:<span class="number">09</span>:<span class="number">12.732</span> * <span class="keyword">MASTER</span> <span class="title">&lt;-&gt; SLAVE</span> sync: Loading DB <span class="keyword">in</span> memory</span><br><span class="line"><span class="number">27962</span>:S <span class="number">23</span> Apr <span class="number">12</span>:<span class="number">09</span>:<span class="number">12.732</span> * <span class="keyword">MASTER</span> <span class="title">&lt;-&gt; SLAVE</span> sync: Finished with success</span><br></pre></td></tr></table></figure>
 
-<h3><span id="连接建立阶段">连接建立阶段</span></h3><p>根据上面的日志可以看到，连接建立也分为几个步骤：</p>
-<p>（1）保存主节点信息：</p>
+<h3><span id="连接建立阶段">连接建立阶段</span></h3><p>根据上面的日志可以看到，连接建立也分为几个步骤：<br>（1）保存主节点信息：</p>
 <figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">27962<span class="function">:S</span> 23 Apr 12<span class="function">:09</span><span class="function">:11.776</span> * SLAVE OF 127.0.0.1<span class="function">:26379</span> enabled <span class="params">(user request from '<span class="attr">id</span>=4 <span class="attr">addr</span>=127.0.0.1:26461 <span class="attr">fd</span>=7 <span class="attr">name</span>= <span class="attr">age</span>=43 <span class="attr">idle</span>=0 <span class="attr">flags</span>=N <span class="attr">db</span>=0 <span class="attr">sub</span>=0 <span class="attr">psub</span>=0 <span class="attr">multi</span>=-1 <span class="attr">qbuf</span>=0 <span class="attr">qbuf-free</span>=32768 <span class="attr">obl</span>=0 <span class="attr">oll</span>=0 <span class="attr">omem</span>=0 <span class="attr">events</span>=r <span class="attr">cmd</span>=slaveof')</span></span><br></pre></td></tr></table></figure>
 
 <p>（2）建立socket连接：</p>
@@ -54,59 +45,38 @@
 <p>每个Redis节点启动后都会动态分配一个40位的十六进制字符串作为运行ID。运行ID的主要作用是用来唯一识别Redis节点，比如从节点保存主节点的运行ID识别自己正在复制的是哪个主节点。如果只使用ip+port的方式识别主节点，那么主节点重启变更了整体数据集（如替换RDB/AOF文件），从节点再基于偏移量复制数据将是不安全的，因此当运行ID变化后从节点将做全量复制。可以运行info server命令查看当前节点的运行ID：</p>
 <figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:16379&gt; <span class="builtin-name">info</span> Server</span><br><span class="line"><span class="comment"># Server</span></span><br><span class="line"><span class="comment">#主节点运行ID</span></span><br><span class="line">run_id:b8eac4a5b10bdf8703ede30f7e2c8a9ef1e84a72</span><br></pre></td></tr></table></figure>
 
-<h4><span id="psync命令的执行过程">psync命令的执行过程</span></h4><p>从节点会使用psync命令完成全量复制和部分复制功能，命令格式：</p>
-<p><code>psync {runId} {offset}</code>，参数含义如下：</p>
-<p> <code>runId</code>：从节点所复制主节点的运行id。</p>
-<p> <code>offset</code>：当前从节点已复制的数据偏移量。</p>
-<p>流程说明： </p>
-<p>（1）从节点（slave）发送psync命令给主节点，参数runId是当前从节点保存的主节点运行ID，如果没有则默认值为，参数offset是当前从节点保存的复制偏移量，如果是第一次参与复制则默认值为-1。 </p>
-<p>（2）主节点（master）根据psync参数和自身数据情况决定响应结果： </p>
+<h4><span id="psync命令的执行过程">psync命令的执行过程</span></h4><p>从节点会使用psync命令完成全量复制和部分复制功能，命令格式：<br><code>psync {runId} {offset}</code>，参数含义如下：<br> <code>runId</code>：从节点所复制主节点的运行id。<br> <code>offset</code>：当前从节点已复制的数据偏移量。</p>
+<p>psync命令执行流程： </p>
+<p>（1）从节点（slave）发送psync命令给主节点，参数runId是当前从节点保存的主节点运行ID，如果没有则默认值为，参数offset是当前从节点保存的复制偏移量，如果是第一次参与复制则默认值为-1。<br>（2）主节点（master）根据psync参数和自身数据情况决定响应结果： </p>
 <ul>
 <li>如果回复+FULLRESYNC {runId} {offset}，那么从节点将触发全量复制流程。</li>
 <li>如果回复+CONTINUE，从节点将触发部分复制流程。</li>
 <li>如果回复+ERR，说明主节点版本低于Redis 2.8，无法识别psync命令，从节点将发送旧版的sync命令触发全量复制流程。</li>
 </ul>
 <h4><span id="全量复制">全量复制</span></h4><p>全量复制一般用于<strong>初次复制</strong>场景，Redis早期支持的复制功能只有全量复制，它会把主节点全部数据一次性发送给从节点，当数据量较大时，会对主从节点和网络造成很大的开销。</p>
-<p>在Redis &gt;= 2.8版本后，触发全量复制的的命令是psync，这里也主要介绍psync全量复制的流程：</p>
-<p>（1）从节点发送psync命令进行数据同步，由于是第一次进行复制，从节点没有复制偏移量和主节点的运行ID，所以发送psync-1。 </p>
-<p>（2）主节点根据psync-1解析出当前为全量复制，回复FULL RESYNC响应。 </p>
-<p>（3）从节点接收主节点的响应数据保存运行ID和偏移量offset，执行到当前步骤时从节点打印如下日志：</p>
+<p>在Redis &gt;= 2.8版本后，触发全量复制的的命令是psync，这里也主要介绍psync<strong>全量复制的流程：</strong></p>
+<p>（1）从节点发送psync命令进行数据同步，由于是第一次进行复制，从节点没有复制偏移量和主节点的运行ID，所以发送psync-1。<br>（2）主节点根据psync-1解析出当前为全量复制，回复FULL RESYNC响应。<br>（3）从节点接收主节点的响应数据保存运行ID和偏移量offset，执行到当前步骤时从节点打印如下日志：</p>
 <figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">27962<span class="selector-pseudo">:S</span> 23 <span class="selector-tag">Apr</span> 12<span class="selector-pseudo">:09</span><span class="selector-pseudo">:12.599</span> * <span class="selector-tag">Trying</span> <span class="selector-tag">a</span> <span class="selector-tag">partial</span> <span class="selector-tag">resynchronization</span> (<span class="selector-tag">request</span> 21<span class="selector-tag">fa80655747f5e0448ae8449ebf7c61664304cb</span><span class="selector-pseudo">:1).</span></span><br><span class="line">27962<span class="selector-pseudo">:S</span> 23 <span class="selector-tag">Apr</span> 12<span class="selector-pseudo">:09</span><span class="selector-pseudo">:12.601</span> * <span class="selector-tag">Full</span> <span class="selector-tag">resync</span> <span class="selector-tag">from</span> <span class="selector-tag">master</span>: <span class="selector-tag">cc4cce78d7d21fe6d93ce00825db1274c8b256f1</span><span class="selector-pseudo">:4606</span></span><br></pre></td></tr></table></figure>
 
-<p>（4）主节点回复FULL RESYNC响应后开始执行bgsave保存RDB文件到本地，并使用一个缓冲区（称为复制缓冲区）记录从现在开始执行的所有写命令。</p>
-<p>（5）主节点的bgsave完成后，发送RDB文件给从节点，从节点把接收的RDB文件保存在本地并直接作为从节点的数据文件，接收完RDB后从节点打印相关日志，可以在日志中查看主节点发送的数据量：</p>
+<p>（4）主节点回复FULL RESYNC响应后开始执行bgsave保存RDB文件到本地，并使用一个缓冲区（称为复制缓冲区）记录从现在开始执行的所有写命令。<br>（5）主节点的bgsave完成后，发送RDB文件给从节点，从节点把接收的RDB文件保存在本地并直接作为从节点的数据文件，接收完RDB后从节点打印相关日志，可以在日志中查看主节点发送的数据量：</p>
 <figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">27962</span>:S <span class="number">23</span> Apr <span class="number">12</span>:<span class="number">09</span>:<span class="number">12.731</span> * <span class="keyword">MASTER</span> <span class="title">&lt;-&gt; SLAVE</span> sync: receiving <span class="number">197</span> bytes from <span class="literal">master</span></span><br></pre></td></tr></table></figure>
 
-<p>（6）对于从节点开始接收RDB快照到接收完成期间，主节点仍然响应读和写命令，因此主节点会把这期间写命令数据保存在复制客户端缓冲区内，当从节点加载完RDB文件后，主节点再把缓冲区内的数据发送给从节点，这样就保证主从之间数据一致性。</p>
-<p>（7）从节点接收完主节点传送来的全部数据后会先清空自身旧数据，然后开始加载RDB文件，对于较大的RDB文件，这一步操作依然比较耗时。</p>
-<p>（9）从节点成功加载完RDB后，如果当前节点开启了AOF持久化功能， 它会立刻做bgrewriteaof操作，为了保证全量复制后AOF持久化文件立刻可用。</p>
+<p>（6）对于从节点开始接收RDB快照到接收完成期间，主节点仍然响应读和写命令，因此主节点会把这期间写命令数据保存在复制客户端缓冲区内，当从节点加载完RDB文件后，主节点再把缓冲区内的数据发送给从节点，这样就保证主从之间数据一致性。<br>（7）从节点接收完主节点传送来的全部数据后会先清空自身旧数据，然后开始加载RDB文件，对于较大的RDB文件，这一步操作依然比较耗时。<br>（9）从节点成功加载完RDB后，如果当前节点开启了AOF持久化功能， 它会立刻做bgrewriteaof操作，为了保证全量复制后AOF持久化文件立刻可用。</p>
 <p>了解完全量复制的所有流程，大家会发现全量复制是一个非常耗时费力的操作。它的时间开销主要包括： </p>
-<p>（1）主节点bgsave进行RDB持久化的时间，该过程是非常消耗CPU、内存(页表复制)、硬盘IO的。 </p>
-<p>（2）RDB文件网络传输时间，对主从节点的带宽都会带来很大的消耗。</p>
-<p>（3）从节点清空数据、加载RDB的时间。 </p>
-<p>（4）可能的AOF重写时间。 </p>
+<p>（1）主节点bgsave进行RDB持久化的时间，该过程是非常消耗CPU、内存(页表复制)、硬盘IO的。<br>（2）RDB文件网络传输时间，对主从节点的带宽都会带来很大的消耗。<br>（3）从节点清空数据、加载RDB的时间。<br>（4）可能的AOF重写时间。 </p>
 <p>例如我们数据量在6G左右的主节点，从节点发起全量复制的总耗时在2分钟左右。因此当数据量达到一定规模之后，由于全量复制过程中将 进行多次持久化相关操作和网络数据传输，这期间会大量消耗主从节点所在 服务器的CPU、内存和网络资源。</p>
 <p>所以除了第一次复制时采用全量复制在所难免之外，对于其他场景应该规避全量复制的发生。正因为全量复制的成本 问题，Redis实现了部分复制功能。</p>
 <h4><span id="部分复制">部分复制</span></h4><p>部分复制主要是Redis针对全量复制的过高开销做出的一种优化措施，用于处理在主从复制中因网络闪断等原因造成的数据丢失场景，使用psync {runId} {offset}命令实现。</p>
 <p>当从节点（slave）正在复制主节点 （master）时，如果出现网络闪断或者命令丢失等异常情况时，从节点会向 主节点要求补发丢失的命令数据，如果主节点的复制积压缓冲区内存在这部分数据则直接发送给从节点，这样就可以保持主从节点复制的一致性。因为补发的数据远远小于全量数据，可以有效避免全量复制的过高开销。Redis 2.8版本开始提供部分复制，因此当使用复制功能时，尽量采用2.8以上版本的Redis。</p>
-<p>部分复制的流程：</p>
-<p>1）当主从节点之间网络出现中断时，如果超过配置文件中配置的<code>repl-timeout</code>时间，主节点会认为从节点故障并中断复制连接。</p>
-<p>2）主从连接中断期间主节点依然响应命令，但因复制连接中断命令无法发送给从节点，不过主节点内部存在的复制积压缓冲区，依然可以保存最近一段时间的写命令数据，默认最大缓存大小为1MB。</p>
-<p>3）当主从节点网络恢复后，从节点会再次连上主节点。</p>
-<p>4）当主从连接恢复后，由于从节点之前保存了自身已复制的偏移量和主节点的运行ID。因此会把它们当作psync参数（上面已经讲过psync命令参数）发送给主节点，要求进行部分复制操作。</p>
-<p>5）主节点接到psync命令后首先核对参数runId是否与自身一致，如果一致，说明之前复制的是当前主节点；之后根据参数offset在自身复制积压缓冲区查找，如果偏移量之后的数据存在缓冲区中，则对从节点发送+CONTINUE响应，表示可以进行部分复制。</p>
-<p>6）主节点根据偏移量把复制积压缓冲区里的数据发送给从节点，保证主从复制进入正常状态。</p>
+<p><strong>部分复制的流程：</strong></p>
+<p>（1）当主从节点之间网络出现中断时，如果超过配置文件中配置的<code>repl-timeout</code>时间，主节点会认为从节点故障并中断复制连接。<br>（2）主从连接中断期间主节点依然响应命令，但因复制连接中断命令无法发送给从节点，不过主节点内部存在的复制积压缓冲区，依然可以保存最近一段时间的写命令数据，默认最大缓存大小为1MB。<br>（3）当主从节点网络恢复后，从节点会再次连上主节点。</p>
+<p>（4）当主从连接恢复后，由于从节点之前保存了自身已复制的偏移量和主节点的运行ID。因此会把它们当作psync参数（上面已经讲过psync命令参数）发送给主节点，要求进行部分复制操作。<br>（5）主节点接到psync命令后首先核对参数runId是否与自身一致，如果一致，说明之前复制的是当前主节点；之后根据参数offset在自身复制积压缓冲区查找，如果偏移量之后的数据存在缓冲区中，则对从节点发送+CONTINUE响应，表示可以进行部分复制。<br>（6）主节点根据偏移量把复制积压缓冲区里的数据发送给从节点，保证主从复制进入正常状态。</p>
 <p>在实际流程中，部分复制传递的数据远远小于全量数据，所以开销很小。</p>
-<h3><span id="命令传播阶段">命令传播阶段</span></h3><p>在命令传播阶段，除了发送写命令，主从节点之间维护着长连接并彼此发送心跳命令；</p>
-<p>主节点向从节点发送ping命令，从节点回复主节点replconf ack {offset} 。心跳机制对于主从复制的超时判断、数据安全等有作用。</p>
+<h3><span id="命令传播阶段">命令传播阶段</span></h3><p>在命令传播阶段，除了发送写命令，主从节点之间维护着长连接并彼此发送心跳命令；<br>主节点向从节点发送ping命令，从节点回复主节点replconf ack {offset} 。心跳机制对于主从复制的超时判断、数据安全等有作用。</p>
 <p>主从心跳判断机制： </p>
-<p>（1）主从节点彼此都有心跳检测机制，各自模拟成对方的客户端进行通信，通过client list命令查看复制相关客户端信息，主节点的连接状态为 flags=M，从节点连接状态为flags=S。</p>
-<p>（2）主节点默认每隔10秒对从节点发送ping命令，判断从节点的存活性和连接状态。可通过参数repl-ping-slave-period控制发送频率，单位是秒。 </p>
-<p>（3）从节点在主线程中每隔1秒发送replconf ack {offset}命令，给主节点上报自身当前的复制偏移量。</p>
+<p>（1）主从节点彼此都有心跳检测机制，各自模拟成对方的客户端进行通信，通过client list命令查看复制相关客户端信息，主节点的连接状态为 flags=M，从节点连接状态为flags=S。<br>（2）主节点默认每隔10秒对从节点发送ping命令，判断从节点的存活性和连接状态。可通过参数repl-ping-slave-period控制发送频率，单位是秒。<br>（3）从节点在主线程中每隔1秒发送replconf ack {offset}命令，给主节点上报自身当前的复制偏移量。</p>
 <p>replconf命令还有其他作用，主要作用如下：</p>
-<p>（1）实时监测主从节点网络状态。</p>
-<p>（2）上报自身复制偏移量，检查复制数据是否丢失，如果从节点数据丢失，再从主节点的复制缓冲区中拉取丢失数据。</p>
-<p>（3）实现保证从节点的数量和延迟性功能，通过min-slaves-to-write、minslaves-max-lag参数配置定义。</p>
+<p>（1）实时监测主从节点网络状态。<br>（2）上报自身复制偏移量，检查复制数据是否丢失，如果从节点数据丢失，再从主节点的复制缓冲区中拉取丢失数据。<br>（3）实现保证从节点的数量和延迟性功能，通过min-slaves-to-write、minslaves-max-lag参数配置定义。</p>
 <p>主节点可以根据replconf命令判断从节点超时时间，体现在info replication统计中的从机信息的lag字段中，lag表示与从节点最后一次通信延迟的秒数，正常延迟应该在0和1之间。如果超过repl-timeout配置的值（默认60秒），则判定从节点下线并断开复制客户端连接。即使主节点判定从节点下线后，如果从节点重新恢复，心跳检测会继续进行。</p>
 <h2><span id="redis主从复制总结">Redis主从复制总结</span></h2><p>接下来的是一些关于 Redis 复制的非常重要的事实（摘自官网）：</p>
 <ul>
